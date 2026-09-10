@@ -1,0 +1,59 @@
+# 최소 sync-only compose 예시 — ghcr.io 이미지 사용, 외부 ClickHouse 겨냥.
+# 전체 스택(Metabase 포함)이 필요하면 deploy/docker-compose.yml 참고.
+#
+# 사용법:
+#   cp config.toml.example config.toml         # bucket/account/sources 채우기
+#   cp .env.example .env                       # AWS 키 + CH 비밀번호 채우기
+#   docker compose up -d                       # 데일리 cron 시작
+#   docker compose run --rm sync-once          # 지금 즉시 한 번 sync
+services:
+  # 데몬: supercronic 이 crontab 대로 sync 를 돌린다 (기본 06:00 UTC).
+  sync:
+    image: ghcr.io/myyrakle/curhouse:latest
+    container_name: curhouse-sync
+    restart: unless-stopped
+    command: ["/usr/local/bin/supercronic", "/app/crontab"]
+    env_file: .env
+    environment:
+      # 배포 호스트 CH 를 겨냥할 때 host.docker.internal 이 편함.
+      # 원격 CH 라면 .env 에 CURHOUSE_CH_HOST 등을 넣어 이 기본값을 오버라이드.
+      CURHOUSE_CH_HOST: ${CURHOUSE_CH_HOST:-host.docker.internal}
+      CURHOUSE_CH_PORT: ${CURHOUSE_CH_PORT:-8123}
+      CURHOUSE_CH_USER: ${CURHOUSE_CH_USER:-default}
+      CURHOUSE_STATE_PATH: /state/state.json
+    volumes:
+      - type: bind
+        source: ./config.toml
+        target: /app/config.toml
+        read_only: true
+        bind:
+          create_host_path: false
+      - curhouse-state:/state
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # 원-샷: 지금 당장 한 번 sync 돌리고 컨테이너 제거.
+  # `docker compose run --rm sync-once` 로 호출.
+  sync-once:
+    image: ghcr.io/myyrakle/curhouse:latest
+    profiles: ["manual"]   # 데몬처럼 뜨지 않게 profile 로 분리
+    command: ["curhouse", "sync"]
+    env_file: .env
+    environment:
+      CURHOUSE_CH_HOST: ${CURHOUSE_CH_HOST:-host.docker.internal}
+      CURHOUSE_CH_PORT: ${CURHOUSE_CH_PORT:-8123}
+      CURHOUSE_CH_USER: ${CURHOUSE_CH_USER:-default}
+      CURHOUSE_STATE_PATH: /state/state.json
+    volumes:
+      - type: bind
+        source: ./config.toml
+        target: /app/config.toml
+        read_only: true
+        bind:
+          create_host_path: false
+      - curhouse-state:/state
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+volumes:
+  curhouse-state:

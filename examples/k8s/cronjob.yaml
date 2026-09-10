@@ -1,0 +1,57 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: curhouse-sync
+  namespace: curhouse
+spec:
+  # 매일 06:00 UTC — AWS CUR 매니페스트가 하루에 여러 번 재생성되므로 이 시각을 굳이
+  # 바꿀 필요는 없다. 다만 CH가 무거운 시간대는 피할 것.
+  schedule: "0 6 * * *"
+  timeZone: "Etc/UTC"
+  concurrencyPolicy: Forbid       # 이전 실행이 오래 걸리면 다음 실행은 스킵
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 5
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: sync
+              image: ghcr.io/myyrakle/curhouse:latest
+              imagePullPolicy: IfNotPresent
+              args: ["curhouse", "sync"]
+              env:
+                - name: CURHOUSE_STATE_PATH
+                  value: /state/state.json
+                # 필요 시 config.toml 값을 env 로 오버라이드 (없으면 config.toml 값 사용)
+                # - name: CURHOUSE_CH_HOST
+                #   value: clickhouse.example.com
+              envFrom:
+                - secretRef:
+                    name: curhouse-secrets
+              volumeMounts:
+                - name: config
+                  mountPath: /app/config.toml
+                  subPath: config.toml
+                  readOnly: true
+                - name: state
+                  mountPath: /state
+              resources:
+                requests:
+                  cpu: "200m"
+                  memory: "512Mi"
+                limits:
+                  cpu: "2"
+                  memory: "2Gi"
+          volumes:
+            - name: config
+              configMap:
+                name: curhouse-config
+                items:
+                  - key: config.toml
+                    path: config.toml
+            - name: state
+              persistentVolumeClaim:
+                claimName: curhouse-state

@@ -1,0 +1,15 @@
+# CronJob 실행 간에 state 파일(.curhouse-state.json)을 유지하기 위한 볼륨.
+# state 는 매니페스트 etag 캐시로, 없으면 매 sync 마다 전 파티션을 재로드하게 됨
+# (S3 재다운로드 + CH 재적재 → 수 분 낭비 + S3 egress 폭탄).
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: curhouse-state
+  namespace: curhouse
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Mi
+  # storageClassName: <cluster 기본값 사용 시 생략. 명시하려면 여기에>

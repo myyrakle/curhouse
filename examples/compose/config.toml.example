@@ -1,0 +1,39 @@
+[aws]
+profile = ""                         # 컨테이너에선 env(.env) 로만 자격증명 → 비워둠
+region = "us-east-1"
+account_id = "111111111111"
+
+[cur]
+bucket_name = "your-cur-bucket"
+time_granularity = "HOURLY"
+include_resources = true
+include_split_cost_allocation = true
+
+# 계정별로 이 [[sources]] 블록을 반복. 같은 버킷의 다른 prefix 에 각 CUR 이 쌓이는 걸 전제.
+[[sources]]
+name = "dev"
+prefix = "cur2"
+export_name = "cur-export"
+
+# [[sources]]
+# name = "qa"
+# prefix = "qa"
+# export_name = "cur_to_dev"
+#
+# [[sources]]
+# name = "prod"
+# prefix = "prod"
+# export_name = "cur_to_dev"
+
+[clickhouse]
+# host/port/user/password 는 env 로 오버라이드 가능 (.env 참고)
+host = "localhost"
+port = 8123
+user = "default"
+password = ""
+database = "aws_billing"
+table = "cur_line_items"
+secure = false                        # 원격 SSL CH 라면 true 로
+
+[state]
+path = "/state/state.json"           # 컴포즈 볼륨 마운트 경로와 일치시켜야 재부팅 시 유지됨
