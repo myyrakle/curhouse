@@ -58,6 +58,9 @@ def manifest_to_ddl(manifest: dict, database: str, table: str) -> str:
         ch_type = map_cur_type(col["type"], name)
         column_lines.append(f"  `{name}` {ch_type}")
 
+    # 다중 소스(dev/qa/prod) 대응 — 파티션 첫 축이 _source 라서
+    # 소스별 파티션이 완전히 격리되고, DROP/REPLACE PARTITION 이 다른 소스 데이터를 건드리지 않는다.
+    column_lines.append("  `_source` LowCardinality(String)")
     column_lines.append("  `_billing_period` String")
     column_lines.append("  `_ingested_at` DateTime64(3) DEFAULT now64(3)")
 
@@ -68,7 +71,7 @@ def manifest_to_ddl(manifest: dict, database: str, table: str) -> str:
         + ",\n".join(column_lines)
         + "\n)\n"
         + "ENGINE = MergeTree\n"
-        + "PARTITION BY _billing_period\n"
+        + "PARTITION BY (_source, _billing_period)\n"
         + f"ORDER BY ({order_by})\n"
         + "SETTINGS index_granularity = 8192"
     )

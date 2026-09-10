@@ -52,10 +52,12 @@ def test_manifest_to_ddl_contains_partition_and_engine() -> None:
     assert "`line_item_resource_id` String" in ddl
     assert "`line_item_unblended_cost` Nullable(Float64)" in ddl
     assert "`resource_tags` Map(String, String)" in ddl
+    assert "`_source` LowCardinality(String)" in ddl
     assert "`_billing_period` String" in ddl
     assert "`_ingested_at` DateTime64(3) DEFAULT now64(3)" in ddl
     assert "ENGINE = MergeTree" in ddl
-    assert "PARTITION BY _billing_period" in ddl
+    # 파티션 첫 축이 _source: 소스별 완전 격리 (DROP PARTITION 이 다른 소스를 안 건드림)
+    assert "PARTITION BY (_source, _billing_period)" in ddl
     assert "ORDER BY" in ddl
 
 

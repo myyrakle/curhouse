@@ -4,12 +4,29 @@ region = "us-east-1"
 account_id = "?"
 
 [cur]
+# 소스 공통 옵션 (버킷은 하나, prefix/export_name 만 소스별로 다름)
 bucket_name = "*-dev-cur"
-export_name = "cur-export"
-prefix = "cur2"
 time_granularity = "HOURLY"
 include_resources = true
 include_split_cost_allocation = true
+
+# 다중 계정(dev/qa/prod) 지원 — 같은 버킷의 다른 경로에 각 계정 CUR 이 쌓인다.
+# name 은 파티션·컬럼 리터럴로 저장되므로 [a-z][a-z0-9_]* 만 허용.
+[[sources]]
+name = "dev"
+prefix = "cur2"
+export_name = "cur-export"
+
+# 필요 시 추가:
+# [[sources]]
+# name = "qa"
+# prefix = "qa"
+# export_name = "cur_to_dev"
+#
+# [[sources]]
+# name = "prod"
+# prefix = "prod"
+# export_name = "cur_to_dev"
 
 [clickhouse]
 host = "localhost"
