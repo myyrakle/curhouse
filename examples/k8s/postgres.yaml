@@ -1,0 +1,89 @@
+# Metabase 앱DB — 기존 docker-compose 의 metabase-db 서비스와 동등한 구성.
+# 이미지·자격증명·볼륨 경로 모두 기존 docker 설정과 맞춰 두어야 볼륨을 그대로 옮길 수 있다.
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: curhouse-postgres
+  namespace: curhouse
+  labels:
+    app.kubernetes.io/name: curhouse
+    app.kubernetes.io/component: postgres
+    app.kubernetes.io/part-of: curhouse
+    app.kubernetes.io/managed-by: kubectl
+spec:
+  serviceName: curhouse-postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app: curhouse-postgres
+  template:
+    metadata:
+      labels:
+        # `app` 은 옛 로그 수집기 호환. app.kubernetes.io/* 는 표준 recommended labels.
+        app: curhouse-postgres
+        app.kubernetes.io/name: curhouse
+        app.kubernetes.io/component: postgres
+        app.kubernetes.io/part-of: curhouse
+        app.kubernetes.io/managed-by: kubectl
+    spec:
+      # PVC 소유권 문제 방지 — postgres 이미지는 999:999 (postgres 유저) 로 실행
+      securityContext:
+        fsGroup: 999
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: pg
+              containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: metabase
+            - name: POSTGRES_USER
+              value: metabase
+            - name: POSTGRES_PASSWORD
+              value: metabase          # 컨테이너-내부 앱DB 라 그대로 유지 (외부 노출 X)
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "metabase", "-d", "metabase"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "metabase", "-d", "metabase"]
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "1"
+              memory: "1Gi"
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: curhouse-postgres-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: curhouse-postgres
+  namespace: curhouse
+  labels:
+    app.kubernetes.io/name: curhouse
+    app.kubernetes.io/component: postgres
+    app.kubernetes.io/part-of: curhouse
+spec:
+  selector:
+    app: curhouse-postgres
+  ports:
+    - name: pg
+      port: 5432
+      targetPort: pg
+  clusterIP: None                     # headless — StatefulSet DNS 이름으로 접근

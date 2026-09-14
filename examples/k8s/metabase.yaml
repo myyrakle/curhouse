@@ -1,0 +1,95 @@
+# Metabase — 기존 docker-compose 의 metabase 서비스와 동등한 구성.
+# 앱DB 는 같은 네임스페이스의 Postgres StatefulSet 을 서비스 DNS 로 참조.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: curhouse-metabase
+  namespace: curhouse
+  labels:
+    app.kubernetes.io/name: curhouse
+    app.kubernetes.io/component: metabase
+    app.kubernetes.io/part-of: curhouse
+    app.kubernetes.io/managed-by: kubectl
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate                     # Metabase 는 single-writer — RollingUpdate 시 잠깐 겹치는 걸 피함
+  selector:
+    matchLabels:
+      app: curhouse-metabase
+  template:
+    metadata:
+      labels:
+        app: curhouse-metabase
+        app.kubernetes.io/name: curhouse
+        app.kubernetes.io/component: metabase
+        app.kubernetes.io/part-of: curhouse
+        app.kubernetes.io/managed-by: kubectl
+    spec:
+      containers:
+        - name: metabase
+          image: metabase/metabase:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 3000
+          env:
+            # JVM 힙 상한. 기본은 컨테이너 RAM 의 ~1/4 을 잡아 노드 메모리 압박에서 OOM 킬 위험.
+            # 1G 로 명시 (ClickHouse 가 진짜 workload 라 Metabase 는 이 정도로 충분).
+            - name: JAVA_OPTS
+              value: "-Xmx1g"
+            - name: MB_DB_TYPE
+              value: postgres
+            - name: MB_DB_HOST
+              value: curhouse-postgres  # StatefulSet Headless Service DNS
+            - name: MB_DB_PORT
+              value: "5432"
+            - name: MB_DB_DBNAME
+              value: metabase
+            - name: MB_DB_USER
+              value: metabase
+            - name: MB_DB_PASS
+              value: metabase           # 앱DB 는 클러스터 내부 전용
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 120
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 4
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "1Gi"
+            limits:
+              cpu: "2"
+              memory: "1500Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: curhouse-metabase
+  namespace: curhouse
+  labels:
+    app.kubernetes.io/name: curhouse
+    app.kubernetes.io/component: metabase
+    app.kubernetes.io/part-of: curhouse
+spec:
+  selector:
+    app: curhouse-metabase
+  ports:
+    - name: http
+      port: 3000
+      targetPort: http
+  # 외부 노출 필요하면:
+  #   type: NodePort           (개발용)
+  #   또는 별도 Ingress 리소스 추가

@@ -1,0 +1,47 @@
+# Docker → k8s Postgres 볼륨 이전 헬퍼.
+# 이 Job 은 postgres PVC 를 마운트한 채 sleep 상태로 대기 → `kubectl cp` 로
+# 파일을 넣어준 뒤 stop 시키는 방식.
+#
+# 절차:
+#   1) docker host 에서 기존 Postgres 중지 후 데이터 tarball 생성
+#      (아래 README.md 의 "Postgres 볼륨 이전" 섹션 참조)
+#   2) kubectl apply -f postgres-migrate-job.yaml
+#   3) POD=$(kubectl -n curhouse get pod -l job-name=curhouse-postgres-migrate -o jsonpath='{.items[0].metadata.name}')
+#      kubectl -n curhouse cp ./metabase-pg-data.tar.gz $POD:/tmp/data.tar.gz
+#      kubectl -n curhouse exec $POD -- sh -c \
+#        'cd /var/lib/postgresql/data && rm -rf ./* && tar xzf /tmp/data.tar.gz --strip-components=1 && chown -R 999:999 . && ls'
+#   4) kubectl delete job curhouse-postgres-migrate -n curhouse
+#   5) kubectl apply -f postgres.yaml   # 이제 데이터 살아있는 상태로 뜸
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: curhouse-postgres-migrate
+  namespace: curhouse
+  labels:
+    app.kubernetes.io/name: curhouse
+    app.kubernetes.io/component: postgres-migrate
+    app.kubernetes.io/part-of: curhouse
+    app.kubernetes.io/managed-by: kubectl
+spec:
+  backoffLimit: 0
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: curhouse
+        app.kubernetes.io/component: postgres-migrate
+        app.kubernetes.io/part-of: curhouse
+    spec:
+      restartPolicy: Never
+      securityContext:
+        fsGroup: 999
+      containers:
+        - name: shell
+          image: alpine:3
+          command: ["sh", "-c", "sleep 3600"]     # 한 시간 대기 → `kubectl cp` 후 exec 로 풀기
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: curhouse-postgres-data

@@ -3,6 +3,12 @@ kind: CronJob
 metadata:
   name: curhouse-sync
   namespace: curhouse
+  labels:
+    app.kubernetes.io/name: curhouse
+    app.kubernetes.io/component: sync
+    app.kubernetes.io/part-of: curhouse
+    app.kubernetes.io/version: v0.1.0
+    app.kubernetes.io/managed-by: kubectl
 spec:
   # 매일 06:00 UTC — AWS CUR 매니페스트가 하루에 여러 번 재생성되므로 이 시각을 굳이
   # 바꿀 필요는 없다. 다만 CH가 무거운 시간대는 피할 것.
@@ -12,14 +18,32 @@ spec:
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 5
   jobTemplate:
+    metadata:
+      labels:
+        # Job 리소스도 CronJob 과 같은 태그를 물려받게 (로그 수집기가 이 라벨로 필터)
+        app.kubernetes.io/name: curhouse
+        app.kubernetes.io/component: sync
+        app.kubernetes.io/part-of: curhouse
+        app.kubernetes.io/version: v0.1.0
+        app.kubernetes.io/managed-by: kubectl
     spec:
       backoffLimit: 2
       template:
+        metadata:
+          labels:
+            # Pod 라벨 — Loki/Promtail/Fluent Bit/Datadog 등이 이 라벨로 로그 태깅.
+            # `app` 은 예전 관행 호환용 (일부 옛 수집기가 이 키만 봄).
+            app: curhouse
+            app.kubernetes.io/name: curhouse
+            app.kubernetes.io/component: sync
+            app.kubernetes.io/part-of: curhouse
+            app.kubernetes.io/version: v0.1.0
+            app.kubernetes.io/managed-by: kubectl
         spec:
           restartPolicy: OnFailure
           containers:
             - name: sync
-              image: ghcr.io/myyrakle/curhouse:latest
+              image: ghcr.io/myyrakle/curhouse:v0.1.0
               imagePullPolicy: IfNotPresent
               args: ["curhouse", "sync"]
               env:

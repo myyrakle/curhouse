@@ -3,6 +3,11 @@ kind: ConfigMap
 metadata:
   name: curhouse-config
   namespace: curhouse
+  labels:
+    app.kubernetes.io/name: curhouse
+    app.kubernetes.io/component: config
+    app.kubernetes.io/part-of: curhouse
+    app.kubernetes.io/managed-by: kubectl
 data:
   # 이 파일이 컨테이너의 /app/config.toml 로 마운트된다.
   # 회사·계정 식별 정보(profile/account_id/bucket_name)는 Secret 의 env 로 주입:

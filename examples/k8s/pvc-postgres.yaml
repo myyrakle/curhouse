@@ -1,0 +1,20 @@
+# Metabase 앱DB (Postgres) 데이터 영속화.
+# 기존 docker volume `metabase-pg-data` 를 그대로 옮겨오는 것이 목표라
+# 용량은 넉넉히 (Metabase 앱DB는 수십 MB~수백 MB 수준).
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: curhouse-postgres-data
+  namespace: curhouse
+  labels:
+    app.kubernetes.io/name: curhouse
+    app.kubernetes.io/component: postgres
+    app.kubernetes.io/part-of: curhouse
+    app.kubernetes.io/managed-by: kubectl
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  # storageClassName: <cluster 기본값 사용 시 생략>

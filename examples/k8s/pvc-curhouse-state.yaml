@@ -6,6 +6,11 @@ kind: PersistentVolumeClaim
 metadata:
   name: curhouse-state
   namespace: curhouse
+  labels:
+    app.kubernetes.io/name: curhouse
+    app.kubernetes.io/component: state
+    app.kubernetes.io/part-of: curhouse
+    app.kubernetes.io/managed-by: kubectl
 spec:
   accessModes:
     - ReadWriteOnce
