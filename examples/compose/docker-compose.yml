@@ -20,6 +20,11 @@ services:
       CURHOUSE_CH_HOST: ${CURHOUSE_CH_HOST:-host.docker.internal}
       CURHOUSE_CH_PORT: ${CURHOUSE_CH_PORT:-8123}
       CURHOUSE_CH_USER: ${CURHOUSE_CH_USER:-default}
+      # AWS/CUR 식별 정보 — .env 로 주입 (config.toml 은 placeholder만)
+      CURHOUSE_AWS_PROFILE: ${CURHOUSE_AWS_PROFILE:-}
+      CURHOUSE_AWS_REGION: ${CURHOUSE_AWS_REGION:-us-east-1}
+      CURHOUSE_AWS_ACCOUNT_ID: ${CURHOUSE_AWS_ACCOUNT_ID:-}
+      CURHOUSE_CUR_BUCKET_NAME: ${CURHOUSE_CUR_BUCKET_NAME:-}
       CURHOUSE_STATE_PATH: /state/state.json
     volumes:
       - type: bind
@@ -43,6 +48,10 @@ services:
       CURHOUSE_CH_HOST: ${CURHOUSE_CH_HOST:-host.docker.internal}
       CURHOUSE_CH_PORT: ${CURHOUSE_CH_PORT:-8123}
       CURHOUSE_CH_USER: ${CURHOUSE_CH_USER:-default}
+      CURHOUSE_AWS_PROFILE: ${CURHOUSE_AWS_PROFILE:-}
+      CURHOUSE_AWS_REGION: ${CURHOUSE_AWS_REGION:-us-east-1}
+      CURHOUSE_AWS_ACCOUNT_ID: ${CURHOUSE_AWS_ACCOUNT_ID:-}
+      CURHOUSE_CUR_BUCKET_NAME: ${CURHOUSE_CUR_BUCKET_NAME:-}
       CURHOUSE_STATE_PATH: /state/state.json
     volumes:
       - type: bind

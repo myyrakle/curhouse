@@ -1,10 +1,15 @@
+# 회사/계정 값은 파일에 박지 말고 .env 로 주입 권장:
+#   CURHOUSE_AWS_PROFILE / CURHOUSE_AWS_REGION / CURHOUSE_AWS_ACCOUNT_ID /
+#   CURHOUSE_CUR_BUCKET_NAME
+# 아래 값들은 어차피 env 가 덮으므로 더미 placeholder 로 둔다.
+
 [aws]
-profile = ""                         # 컨테이너에선 env(.env) 로만 자격증명 → 비워둠
+profile = ""                         # 컨테이너에선 env(.env) 로 자격증명 → 비워둠
 region = "us-east-1"
-account_id = "111111111111"
+account_id = "000000000000"          # 실제 값은 CURHOUSE_AWS_ACCOUNT_ID
 
 [cur]
-bucket_name = "your-cur-bucket"
+bucket_name = "your-cur-bucket"      # 실제 값은 CURHOUSE_CUR_BUCKET_NAME
 time_granularity = "HOURLY"
 include_resources = true
 include_split_cost_allocation = true
@@ -33,7 +38,7 @@ user = "default"
 password = ""
 database = "aws_billing"
 table = "cur_line_items"
-secure = false                        # 원격 SSL CH 라면 true 로
+secure = false                        # 원격 SSL CH 라면 true 로 (env override 없음)
 
 [state]
 path = "/state/state.json"           # 컴포즈 볼륨 마운트 경로와 일치시켜야 재부팅 시 유지됨

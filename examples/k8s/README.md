@@ -60,6 +60,7 @@ kubectl -n curhouse run curhouse-once --rm -it --restart=Never \
   ```yaml
   image: ghcr.io/myyrakle/curhouse:v1.2.3
   ```
+  새 이미지 배포는 리포지토리 루트에서 `make image-publish TAG=v1.2.3` (사전에 `docker login ghcr.io`).
 
 ## 원격 CH SSL 접속
 

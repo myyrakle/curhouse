@@ -5,15 +5,18 @@ metadata:
   namespace: curhouse
 data:
   # 이 파일이 컨테이너의 /app/config.toml 로 마운트된다.
-  # bucket/account/sources 는 실제 값으로 교체.
+  # 회사·계정 식별 정보(profile/account_id/bucket_name)는 Secret 의 env 로 주입:
+  #   CURHOUSE_AWS_PROFILE / CURHOUSE_AWS_REGION / CURHOUSE_AWS_ACCOUNT_ID /
+  #   CURHOUSE_CUR_BUCKET_NAME
+  # 아래 값들은 env 가 덮으므로 placeholder 로 둔다.
   config.toml: |
     [aws]
-    profile = ""                          # 컨테이너에선 env 로 자격증명 → 비워둠
+    profile = ""
     region = "us-east-1"
-    account_id = "111111111111"
+    account_id = "000000000000"
 
     [cur]
-    bucket_name = "your-cur-bucket"
+    bucket_name = "placeholder-bucket"
     time_granularity = "HOURLY"
     include_resources = true
     include_split_cost_allocation = true

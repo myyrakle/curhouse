@@ -160,3 +160,18 @@ def test_env_ch_user_override(
     monkeypatch.setenv("CURHOUSE_CH_USER", "readonly")
     cfg = load_config(sample_config_path)
     assert cfg.clickhouse.user == "readonly"
+
+
+def test_env_aws_and_cur_overrides(
+    sample_config_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # 회사·계정 식별 정보는 파일에 박지 않고 env 로 주입 가능해야 함
+    monkeypatch.setenv("CURHOUSE_AWS_PROFILE", "prod-profile")
+    monkeypatch.setenv("CURHOUSE_AWS_REGION", "ap-northeast-2")
+    monkeypatch.setenv("CURHOUSE_AWS_ACCOUNT_ID", "987654321012")
+    monkeypatch.setenv("CURHOUSE_CUR_BUCKET_NAME", "actual-bucket")
+    cfg = load_config(sample_config_path)
+    assert cfg.aws.profile == "prod-profile"
+    assert cfg.aws.region == "ap-northeast-2"
+    assert cfg.aws.account_id == "987654321012"
+    assert cfg.cur.bucket_name == "actual-bucket"

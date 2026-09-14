@@ -59,3 +59,12 @@ CURHOUSE_CH_PASSWORD=...
 ```yaml
 image: ghcr.io/myyrakle/curhouse:v1.2.3
 ```
+
+## 이미지 새로 빌드/배포하려면
+
+리포지토리 루트에서:
+```bash
+docker login ghcr.io                # 최초 1회 (write:packages PAT 필요)
+make image-publish TAG=v1.2.3       # 멀티아키 빌드 + push
+```
+자세한 옵션은 `make help`.

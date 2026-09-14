@@ -116,14 +116,24 @@ def load_config(path: Path | str) -> Config:
     ch_user = os.environ.get("CURHOUSE_CH_USER", data["clickhouse"]["user"])
     state_path = os.environ.get("CURHOUSE_STATE_PATH", data["state"]["path"])
 
+    # 회사·계정 식별 정보는 파일에 박지 말고 env 로 주입 (기본은 config.toml).
+    aws_profile = os.environ.get("CURHOUSE_AWS_PROFILE", data["aws"].get("profile", ""))
+    aws_region = os.environ.get("CURHOUSE_AWS_REGION", data["aws"]["region"])
+    aws_account_id = os.environ.get(
+        "CURHOUSE_AWS_ACCOUNT_ID", str(data["aws"]["account_id"])
+    )
+    cur_bucket = os.environ.get(
+        "CURHOUSE_CUR_BUCKET_NAME", data["cur"]["bucket_name"]
+    )
+
     return Config(
         aws=AwsConfig(
-            profile=data["aws"].get("profile", ""),
-            region=data["aws"]["region"],
-            account_id=str(data["aws"]["account_id"]),
+            profile=aws_profile,
+            region=aws_region,
+            account_id=aws_account_id,
         ),
         cur=CurConfig(
-            bucket_name=data["cur"]["bucket_name"],
+            bucket_name=cur_bucket,
             time_granularity=granularity,
             include_resources=data["cur"]["include_resources"],
             include_split_cost_allocation=data["cur"][
