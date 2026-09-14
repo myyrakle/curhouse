@@ -5,7 +5,14 @@ from pathlib import Path
 import pytest
 
 from curhouse.aws.session import get_session
-from curhouse.config import AwsConfig, ClickhouseConfig, Config, CurConfig, StateConfig
+from curhouse.config import (
+    AwsConfig,
+    ClickhouseConfig,
+    Config,
+    CurConfig,
+    SourceConfig,
+    StateConfig,
+)
 
 
 def _cfg(profile: str = "test-profile") -> Config:
@@ -13,12 +20,11 @@ def _cfg(profile: str = "test-profile") -> Config:
         aws=AwsConfig(profile=profile, region="us-east-1", account_id="111"),
         cur=CurConfig(
             bucket_name="b",
-            export_name="e",
-            prefix="p",
             time_granularity="HOURLY",
             include_resources=True,
             include_split_cost_allocation=True,
         ),
+        sources=(SourceConfig(name="dev", prefix="p", export_name="e"),),
         clickhouse=ClickhouseConfig(
             host="h", port=8123, user="u", password="",
             database="d", table="t", secure=False,

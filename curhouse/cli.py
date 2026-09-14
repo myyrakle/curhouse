@@ -21,6 +21,11 @@ def build_parser() -> argparse.ArgumentParser:
 
     sp_setup = sub.add_parser("setup", help="provision S3 bucket and CUR export")
     _add_common(sp_setup)
+    sp_setup.add_argument(
+        "--source",
+        default=None,
+        help="source name to set up (required when multiple sources defined)",
+    )
 
     sp_sync = sub.add_parser("sync", help="sync changed billing periods")
     _add_common(sp_sync)
@@ -29,12 +34,22 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="force reload a single billing period (YYYY-MM)",
     )
+    sp_sync.add_argument(
+        "--only-source",
+        default=None,
+        help="only sync one source (dev/qa/prod). Defaults to all sources.",
+    )
 
     sp_status = sub.add_parser("status", help="show last sync state")
     _add_common(sp_status)
 
     sp_init = sub.add_parser("init-schema", help="create ClickHouse table only")
     _add_common(sp_init)
+    sp_init.add_argument(
+        "--source",
+        default=None,
+        help="source whose manifest to derive DDL from (required if multiple)",
+    )
 
     return parser
 

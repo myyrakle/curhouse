@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: curhouse-config
+  namespace: curhouse
+data:
+  # 이 파일이 컨테이너의 /app/config.toml 로 마운트된다.
+  # 회사·계정 식별 정보(profile/account_id/bucket_name)는 Secret 의 env 로 주입:
+  #   CURHOUSE_AWS_PROFILE / CURHOUSE_AWS_REGION / CURHOUSE_AWS_ACCOUNT_ID /
+  #   CURHOUSE_CUR_BUCKET_NAME
+  # 아래 값들은 env 가 덮으므로 placeholder 로 둔다.
+  config.toml: |
+    [aws]
+    profile = ""
+    region = "us-east-1"
+    account_id = "000000000000"
+
+    [cur]
+    bucket_name = "placeholder-bucket"
+    time_granularity = "HOURLY"
+    include_resources = true
+    include_split_cost_allocation = true
+
+    [[sources]]
+    name = "dev"
+    prefix = "cur2"
+    export_name = "cur-export"
+
+    # [[sources]]
+    # name = "qa"
+    # prefix = "qa"
+    # export_name = "cur_to_dev"
+    #
+    # [[sources]]
+    # name = "prod"
+    # prefix = "prod"
+    # export_name = "cur_to_dev"
+
+    [clickhouse]
+    host = "clickhouse.example.com"        # env 로도 오버라이드 가능
+    port = 443
+    user = "api"
+    password = ""                          # 반드시 env(secret) 로 주입
+    database = "aws_billing"
+    table = "cur_line_items"
+    secure = true                          # SSL 접속 (env 오버라이드 없음)
+
+    [state]
+    path = "/state/state.json"
